@@ -1,0 +1,897 @@
+<?php
+session_start();
+
+// Database setup
+$dsn = 'sqlite:' . __DIR__ . '/event_management.db';
+$options = [
+    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+];
+
+try {
+    $db = new PDO($dsn, null, null, $options);
+
+    // Create tables if they don't exist
+    $db->exec("
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT NOT NULL,
+            password TEXT NOT NULL,
+            role TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS events (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            date TEXT NOT NULL,
+            time TEXT NOT NULL,
+            description TEXT NOT NULL,
+            location TEXT NOT NULL,
+            phone TEXT NOT NULL,
+            image_url TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS event_requests (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            email TEXT NOT NULL,
+            event_id INTEGER NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            status TEXT DEFAULT 'pending',
+            FOREIGN KEY (event_id) REFERENCES events (id)
+        );
+    ");
+} catch (PDOException $e) {
+    die("Database connection failed: " . $e->getMessage());
+}
+
+// Handle user registration
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register'])) {
+    $username = htmlspecialchars($_POST['username']);
+    $password = password_hash($_POST['password'], PASSWORD_BCRYPT); // Hash password
+    $role = 'user'; // Default role for registered users
+
+    // Check if username already exists
+    $stmt = $db->prepare("SELECT * FROM users WHERE username = ?");
+    $stmt->execute([$username]);
+    if ($stmt->fetch()) {
+        $_SESSION['error'] = "Username already exists.";
+        header("Location: index.php");
+        exit();
+    }
+
+    // Insert new user into the database
+    $stmt = $db->prepare("INSERT INTO users (username, password, role) VALUES (?, ?, ?)");
+    $stmt->execute([$username, $password, $role]);
+
+    $_SESSION['success'] = "Registration successful! Please log in.";
+    header("Location: index.php");
+    exit();
+}
+
+// Handle login
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
+    $username = $_POST['username'];
+    $password = $_POST['password'];
+
+    $stmt = $db->prepare("SELECT * FROM users WHERE username = ?");
+    $stmt->execute([$username]);
+    $user = $stmt->fetch();
+
+    if ($user && password_verify($password, $user['password'])) {
+        $_SESSION['user_id'] = $user['id'];
+        $_SESSION['username'] = $user['username'];
+        $_SESSION['role'] = $user['role'];
+        $_SESSION['success'] = "Login successful!";
+        header("Location: events.php");
+        exit();
+    } else {
+        $_SESSION['error'] = "Invalid username or password.";
+        header("Location: index.php");
+        exit();
+    }
+}
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Management</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body { font-family: 'Poppins', sans-serif; background-color: #f8f9fa; color: #333; }
+        .navbar { background-color: #343a40; padding: 15px; }
+        .navbar a { color: white; text-decoration: none; margin-right: 15px; font-weight: 500; }
+        .navbar a:hover { color: #1DB954; }
+        .card { border: none; border-radius: 10px; padding: 20px; margin: 20px 0; background: white; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+        .btn-primary { background-color: #1DB954; border: none; padding: 10px 20px; font-weight: 500; }
+        .btn-primary:hover { background-color: #17a745; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); justify-content: center; align-items: center; }
+        .modal-content { background-color: white; padding: 25px; border-radius: 10px; width: 90%; max-width: 500px; }
+        .alert { margin: 20px 0; }
+    </style>
+</head>
+<body>
+
+<!-- Navigation Bar -->
+<nav class="navbar">
+    <a href="index.php"><i class="fas fa-home"></i> Home</a>
+    <?php if (isset($_SESSION['user_id'])): ?>
+        <a href="events.php" class="btn btn-primary"><i class="fas fa-calendar-alt"></i> Events</a>
+        <a href="index.php?action=logout" class="btn btn-danger"><i class="fas fa-sign-out-alt"></i> Logout</a>
+    <?php else: ?>
+        <a href="#" onclick="showLoginModal()"><i class="fas fa-sign-in-alt"></i> Login</a>
+        <a href="#" onclick="showRegisterModal()"><i class="fas fa-user-plus"></i> Register</a>
+    <?php endif; ?>
+</nav>
+
+<!-- Success Message -->
+<?php if (isset($_SESSION['success'])): ?>
+    <div class="alert alert-success text-center"><?= $_SESSION['success']; unset($_SESSION['success']); ?></div>
+<?php endif; ?>
+
+<!-- Error Message -->
+<?php if (isset($_SESSION['error'])): ?>
+    <div class="alert alert-danger text-center"><?= $_SESSION['error']; unset($_SESSION['error']); ?></div>
+<?php endif; ?>
+
+<!-- Main Content -->
+<div class="container mt-4">
+    <div class="card">
+        <h1 class="text-center mb-4">Welcome to Event Management</h1>
+        <p class="text-center">Please log in or register to manage events.</p>
+    </div>
+</div>
+
+<!-- Login Modal -->
+<div id="loginModal" class="modal">
+    <div class="modal-content">
+        <h3 class="text-center mb-4">Login</h3>
+        <form method="POST">
+            <input type="hidden" name="login" value="1">
+            <div class="mb-3">
+                <label for="username" class="form-label">Username</label>
+                <input type="text" name="username" class="form-control" placeholder="Enter your username" required>
+            </div>
+            <div class="mb-3">
+                <label for="password" class="form-label">Password</label>
+                <input type="password" name="password" class="form-control" placeholder="Enter your password" required>
+            </div>
+            <div class="d-flex justify-content-between">
+                <button type="submit" class="btn btn-primary">Login</button>
+                <button type="button" class="btn btn-secondary" onclick="closeLoginModal()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Register Modal -->
+<div id="registerModal" class="modal">
+    <div class="modal-content">
+        <h3 class="text-center mb-4">Register</h3>
+        <form method="POST">
+            <input type="hidden" name="register" value="1">
+            <div class="mb-3">
+                <label for="username" class="form-label">Username</label>
+                <input type="text" name="username" class="form-control" placeholder="Enter your username" required>
+            </div>
+            <div class="mb-3">
+                <label for="password" class="form-label">Password</label>
+                <input type="password" name="password" class="form-control" placeholder="Enter your password" required>
+            </div>
+            <div class="d-flex justify-content-between">
+                <button type="submit" class="btn btn-primary">Register</button>
+                <button type="button" class="btn btn-secondary" onclick="closeRegisterModal()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Show Login Modal
+    function showLoginModal() {
+        document.getElementById('loginModal').style.display = 'flex';
+    }
+
+    // Close Login Modal
+    function closeLoginModal() {
+        document.getElementById('loginModal').style.display = 'none';
+    }
+
+    // Show Register Modal
+    function showRegisterModal() {
+        document.getElementById('registerModal').style.display = 'flex';
+    }
+
+    // Close Register Modal
+    function closeRegisterModal() {
+        document.getElementById('registerModal').style.display = 'none';
+    }
+</script>
+
+</body>
+</html><?php
+session_start();
+
+// Database setup
+$dsn = 'sqlite:' . __DIR__ . '/event_management.db';
+$options = [
+    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+];
+
+try {
+    $db = new PDO($dsn, null, null, $options);
+
+    // Create tables if they don't exist
+    $db->exec("
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT NOT NULL,
+            password TEXT NOT NULL,
+            role TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS events (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            date TEXT NOT NULL,
+            time TEXT NOT NULL,
+            description TEXT NOT NULL,
+            location TEXT NOT NULL,
+            phone TEXT NOT NULL,
+            image_url TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS event_requests (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            email TEXT NOT NULL,
+            event_id INTEGER NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            status TEXT DEFAULT 'pending',
+            FOREIGN KEY (event_id) REFERENCES events (id)
+        );
+    ");
+} catch (PDOException $e) {
+    die("Database connection failed: " . $e->getMessage());
+}
+
+// Handle user registration
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register'])) {
+    $username = htmlspecialchars($_POST['username']);
+    $password = password_hash($_POST['password'], PASSWORD_BCRYPT); // Hash password
+    $role = 'user'; // Default role for registered users
+
+    // Check if username already exists
+    $stmt = $db->prepare("SELECT * FROM users WHERE username = ?");
+    $stmt->execute([$username]);
+    if ($stmt->fetch()) {
+        $_SESSION['error'] = "Username already exists.";
+        header("Location: event.php");
+        exit();
+    }
+
+    // Insert new user into the database
+    $stmt = $db->prepare("INSERT INTO users (username, password, role) VALUES (?, ?, ?)");
+    $stmt->execute([$username, $password, $role]);
+
+    $_SESSION['success'] = "Registration successful! Please log in.";
+    header("Location: event.php");
+    exit();
+}
+
+// Handle login
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
+    $username = $_POST['username'];
+    $password = $_POST['password'];
+
+    $stmt = $db->prepare("SELECT * FROM users WHERE username = ?");
+    $stmt->execute([$username]);
+    $user = $stmt->fetch();
+
+    if ($user && password_verify($password, $user['password'])) {
+        $_SESSION['user_id'] = $user['id'];
+        $_SESSION['username'] = $user['username'];
+        $_SESSION['role'] = $user['role'];
+        $_SESSION['success'] = "Login successful!";
+        header("Location: event.php");
+        exit();
+    } else {
+        $_SESSION['error'] = "Invalid username or password.";
+        header("Location: event.php");
+        exit();
+    }
+}
+
+// Handle logout
+if (isset($_GET['action']) && $_GET['action'] === 'logout') {
+    session_destroy();
+    $_SESSION['success'] = "Logout successful!";
+    header("Location: event.php");
+    exit();
+}
+
+// Handle RSVP form submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'rsvp') {
+    if (!isset($_SESSION['user_id'])) {
+        $_SESSION['error'] = "You must be logged in to RSVP.";
+        header("Location: event.php");
+        exit();
+    }
+
+    $name = htmlspecialchars($_POST['name']);
+    $email = htmlspecialchars($_POST['email']);
+    $eventId = intval($_POST['event_id']);
+
+    // Insert RSVP request into the database
+    $stmt = $db->prepare("INSERT INTO event_requests (name, email, event_id) VALUES (?, ?, ?)");
+    $stmt->execute([$name, $email, $eventId]);
+
+    $_SESSION['success'] = "RSVP submitted successfully!";
+    header("Location: event.php");
+    exit();
+}
+
+// Fetch all events
+$events = $db->query("SELECT * FROM events ORDER BY date ASC")->fetchAll();
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Management</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body { font-family: 'Poppins', sans-serif; background-color: #f8f9fa; color: #333; }
+        .navbar { background-color: #343a40; padding: 15px; }
+        .navbar a { color: white; text-decoration: none; margin-right: 15px; font-weight: 500; }
+        .navbar a:hover { color: #1DB954; }
+        .event-card { border: none; border-radius: 10px; padding: 20px; margin: 20px 0; background: white; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); transition: transform 0.3s ease; }
+        .event-card:hover { transform: translateY(-5px); }
+        .event-card h3 { color: #1DB954; margin-bottom: 15px; }
+        .event-card p { margin-bottom: 10px; }
+        .event-card img { border-radius: 10px; margin-bottom: 15px; }
+        .btn-primary { background-color: #1DB954; border: none; padding: 10px 20px; font-weight: 500; }
+        .btn-primary:hover { background-color: #17a745; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); justify-content: center; align-items: center; }
+        .modal-content { background-color: white; padding: 25px; border-radius: 10px; width: 90%; max-width: 500px; }
+        .alert { margin: 20px 0; }
+    </style>
+</head>
+<body>
+
+<!-- Navigation Bar -->
+<nav class="navbar">
+    <a href="event.php"><i class="fas fa-home"></i> Home</a>
+    <?php if (isset($_SESSION['user_id'])): ?>
+        <a href="event.php?action=logout" class="btn btn-danger"><i class="fas fa-sign-out-alt"></i> Logout</a>
+    <?php else: ?>
+        <a href="#" onclick="showLoginModal()"><i class="fas fa-sign-in-alt"></i> Login</a>
+        <a href="#" onclick="showRegisterModal()"><i class="fas fa-user-plus"></i> Register</a>
+    <?php endif; ?>
+    <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin'): ?>
+        <a href="ev_adding.php"><i class="fas fa-user-shield"></i> Admin Dashboard</a>
+    <?php endif; ?>
+</nav>
+
+<!-- Success Message -->
+<?php if (isset($_SESSION['success'])): ?>
+    <div class="alert alert-success text-center"><?= $_SESSION['success']; unset($_SESSION['success']); ?></div>
+<?php endif; ?>
+
+<!-- Error Message -->
+<?php if (isset($_SESSION['error'])): ?>
+    <div class="alert alert-danger text-center"><?= $_SESSION['error']; unset($_SESSION['error']); ?></div>
+<?php endif; ?>
+
+<!-- Event List -->
+<div class="container mt-4">
+    <h1 class="text-center mb-4">Upcoming Events</h1>
+    <?php if (empty($events)): ?>
+        <p class="text-center">No upcoming events.</p>
+    <?php else: ?>
+        <div class="row">
+            <?php foreach ($events as $event): ?>
+                <div class="col-md-6 col-lg-4">
+                    <div class="event-card">
+                        <h3><?= htmlspecialchars($event['name']); ?></h3>
+                        <p><strong>Date:</strong> <?= htmlspecialchars($event['date']); ?></p>
+                        <p><strong>Time:</strong> <?= htmlspecialchars($event['time']); ?></p>
+                        <p><?= htmlspecialchars($event['description']); ?></p>
+                        <p><strong>Location:</strong> <?= htmlspecialchars($event['location']); ?></p>
+                        <p><strong>Contact:</strong> <?= htmlspecialchars($event['phone']); ?></p>
+                        <img src="<?= htmlspecialchars($event['image_url']); ?>" alt="Event Image">
+                        <button class="btn btn-primary w-100" onclick="openRSVPModal(<?= $event['id']; ?>, '<?= htmlspecialchars($event['name']); ?>')">
+                            <i class="fas fa-calendar-check"></i> RSVP
+                        </button>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    <?php endif; ?>
+</div>
+
+<!-- Login Modal -->
+<div id="loginModal" class="modal">
+    <div class="modal-content">
+        <h3 class="text-center mb-4">Login</h3>
+        <form method="POST">
+            <input type="hidden" name="login" value="1">
+            <div class="mb-3">
+                <label for="username" class="form-label">Username</label>
+                <input type="text" name="username" class="form-control" placeholder="Enter your username" required>
+            </div>
+            <div class="mb-3">
+                <label for="password" class="form-label">Password</label>
+                <input type="password" name="password" class="form-control" placeholder="Enter your password" required>
+            </div>
+            <div class="d-flex justify-content-between">
+                <button type="submit" class="btn btn-primary">Login</button>
+                <button type="button" class="btn btn-secondary" onclick="closeLoginModal()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Register Modal -->
+<div id="registerModal" class="modal">
+    <div class="modal-content">
+        <h3 class="text-center mb-4">Register</h3>
+        <form method="POST">
+            <input type="hidden" name="register" value="1">
+            <div class="mb-3">
+                <label for="username" class="form-label">Username</label>
+                <input type="text" name="username" class="form-control" placeholder="Enter your username" required>
+            </div>
+            <div class="mb-3">
+                <label for="password" class="form-label">Password</label>
+                <input type="password" name="password" class="form-control" placeholder="Enter your password" required>
+            </div>
+            <div class="d-flex justify-content-between">
+                <button type="submit" class="btn btn-primary">Register</button>
+                <button type="button" class="btn btn-secondary" onclick="closeRegisterModal()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- RSVP Modal -->
+<div id="rsvpModal" class="modal">
+    <div class="modal-content">
+        <h3 id="modalEventName" class="text-center mb-4"></h3>
+        <form method="POST">
+            <input type="hidden" name="action" value="rsvp">
+            <input type="hidden" name="event_id" id="modalEventId">
+            <div class="mb-3">
+                <label for="name" class="form-label">Your Name</label>
+                <input type="text" name="name" id="name" class="form-control" placeholder="Enter your name" required>
+            </div>
+            <div class="mb-3">
+                <label for="email" class="form-label">Your Email</label>
+                <input type="email" name="email" id="email" class="form-control" placeholder="Enter your email" required>
+            </div>
+            <div class="d-flex justify-content-between">
+                <button type="submit" class="btn btn-success">Submit RSVP</button>
+                <button type="button" class="btn btn-secondary" onclick="closeRSVPModal()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+<div class="col-md-6 col-lg-4">
+    <div class="event-card">
+        <h3><?= htmlspecialchars($event['name']); ?></h3>
+        <p><strong>Date:</strong> <?= htmlspecialchars($event['date']); ?></p>
+        <p><strong>Time:</strong> <?= htmlspecialchars($event['time']); ?></p>
+        <p><?= htmlspecialchars($event['description']); ?></p>
+        <p><strong>Location:</strong> <?= htmlspecialchars($event['location']); ?></p>
+        <p><strong>Contact:</strong> <?= htmlspecialchars($event['phone']); ?></p>
+        <img src="<?= htmlspecialchars($event['image_url']); ?>" alt="Event Image">
+        <a href="event_details.php?id=<?= $event['id']; ?>" class="btn btn-primary w-100 mb-2">
+            <i class="fas fa-info-circle"></i> View Details
+        </a>
+        <button class="btn btn-primary w-100" onclick="openRSVPModal(<?= $event['id']; ?>, '<?= htmlspecialchars($event['name']); ?>')">
+            <i class="fas fa-calendar-check"></i> RSVP
+        </button>
+    </div>
+</div>
+
+<script>
+    // Open RSVP Modal
+    function openRSVPModal(eventId, eventName) {
+        document.getElementById('modalEventId').value = eventId;
+        document.getElementById('modalEventName').textContent = eventName;
+        document.getElementById('rsvpModal').style.display = 'flex';
+    }
+
+    // Close RSVP Modal
+    function closeRSVPModal() {
+        document.getElementById('rsvpModal').style.display = 'none';
+    }
+
+    // Show Login Modal
+    function showLoginModal() {
+        document.getElementById('loginModal').style.display = 'flex';
+    }
+
+    // Close Login Modal
+    function closeLoginModal() {
+        document.getElementById('loginModal').style.display = 'none';
+    }
+
+    // Show Register Modal
+    function showRegisterModal() {
+        document.getElementById('registerModal').style.display = 'flex';
+    }
+
+    // Close Register Modal
+    function closeRegisterModal() {
+        document.getElementById('registerModal').style.display = 'none';
+    }
+</script>
+
+</body>
+</html><?php
+session_start();
+
+// Redirect to login if not authenticated
+if (!isset($_SESSION['admin_logged_in'])) {
+    header("Location: index.php");
+    exit();
+}
+
+// Database setup
+$dsn = 'sqlite:' . __DIR__ . '/event_management.db';
+$options = [
+    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+];
+
+try {
+    $db = new PDO($dsn, null, null, $options);
+
+    // Create tables if they don't exist
+    $db->exec("
+        CREATE TABLE IF NOT EXISTS events (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            date TEXT NOT NULL,
+            time TEXT NOT NULL,
+            description TEXT NOT NULL,
+            location TEXT NOT NULL,
+            phone TEXT NOT NULL,
+            image_url TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS event_requests (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            email TEXT NOT NULL,
+            event_id INTEGER NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            status TEXT DEFAULT 'pending',
+            FOREIGN KEY (event_id) REFERENCES events (id)
+        );
+    ");
+} catch (PDOException $e) {
+    die("Database connection failed: " . $e->getMessage());
+}
+
+// Handle admin login
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admin_login'])) {
+    $username = $_POST['username'];
+    $password = $_POST['password'];
+
+    // Hardcoded admin credentials
+    $adminUsername = 'sithara2001';
+    $adminPassword = '1234';
+
+    if ($username === $adminUsername && $password === $adminPassword) {
+        $_SESSION['admin_logged_in'] = true;
+        $_SESSION['success'] = "Admin login successful!";
+        header("Location: ev_adding.php");
+        exit();
+    } else {
+        $_SESSION['error'] = "Invalid admin username or password.";
+        header("Location: ev_adding.php");
+        exit();
+    }
+}
+
+// Handle adding a new event
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    if ($_POST['action'] === 'addEvent') {
+        // Handle image upload
+        $imageUrl = '';
+        if (isset($_FILES['eventImage']) && $_FILES['eventImage']['error'] === UPLOAD_ERR_OK) {
+            $uploadDir = __DIR__ . '/uploads/';
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0777, true);
+            }
+            $imageName = basename($_FILES['eventImage']['name']);
+            $imagePath = $uploadDir . $imageName;
+
+            // Move the uploaded file to the uploads directory
+            if (move_uploaded_file($_FILES['eventImage']['tmp_name'], $imagePath)) {
+                $imageUrl = 'uploads/' . $imageName;
+            } else {
+                $_SESSION['error'] = "Failed to upload image.";
+                header("Location: ev_adding.php");
+                exit();
+            }
+        }
+
+        // Insert event into database
+        $stmt = $db->prepare("
+            INSERT INTO events (name, date, time, description, location, phone, image_url)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        ");
+        $stmt->execute([
+            $_POST['eventName'],
+            $_POST['eventDate'],
+            $_POST['eventTime'],
+            $_POST['eventDescription'],
+            $_POST['eventLocation'],
+            $_POST['eventPhone'],
+            $imageUrl
+        ]);
+
+        $_SESSION['success'] = "Event added successfully!";
+        header("Location: ev_adding.php");
+        exit();
+    } elseif ($_POST['action'] === 'updateEvent') {
+        // Handle image upload for update
+        $imageUrl = $_POST['existingImage'];
+        if (isset($_FILES['eventImage']) && $_FILES['eventImage']['error'] === UPLOAD_ERR_OK) {
+            $uploadDir = __DIR__ . '/uploads/';
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0777, true);
+            }
+            $imageName = basename($_FILES['eventImage']['name']);
+            $imagePath = $uploadDir . $imageName;
+
+            // Move the uploaded file to the uploads directory
+            if (move_uploaded_file($_FILES['eventImage']['tmp_name'], $imagePath)) {
+                $imageUrl = 'uploads/' . $imageName;
+            } else {
+                $_SESSION['error'] = "Failed to upload image.";
+                header("Location: ev_adding.php");
+                exit();
+            }
+        }
+
+        // Update event in database
+        $stmt = $db->prepare("
+            UPDATE events
+            SET name = ?, date = ?, time = ?, description = ?, location = ?, phone = ?, image_url = ?
+            WHERE id = ?
+        ");
+        $stmt->execute([
+            $_POST['eventName'],
+            $_POST['eventDate'],
+            $_POST['eventTime'],
+            $_POST['eventDescription'],
+            $_POST['eventLocation'],
+            $_POST['eventPhone'],
+            $imageUrl,
+            $_POST['eventId']
+        ]);
+
+        $_SESSION['success'] = "Event updated successfully!";
+        header("Location: ev_adding.php");
+        exit();
+    }
+}
+
+// Handle deleting an event
+if (isset($_GET['action']) && $_GET['action'] === 'deleteEvent' && isset($_GET['id'])) {
+    $stmt = $db->prepare("DELETE FROM events WHERE id = ?");
+    $stmt->execute([$_GET['id']]);
+
+    $_SESSION['success'] = "Event deleted successfully!";
+    header("Location: ev_adding.php");
+    exit();
+}
+
+// Fetch all events
+$events = $db->query("SELECT * FROM events ORDER BY date ASC")->fetchAll();
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #121212;
+            color: #ffffff;
+        }
+        .navbar {
+            background-color: #000000;
+            padding: 15px;
+        }
+        .navbar a {
+            color: #1DB954;
+            text-decoration: none;
+            margin-right: 15px;
+            font-weight: 500;
+        }
+        .navbar a:hover {
+            color: #1ED760;
+        }
+        .container {
+            max-width: 1200px;
+            margin: auto;
+            padding: 20px;
+        }
+        .card {
+            background-color: #181818;
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .card-header {
+            background-color: #1DB954;
+            color: white;
+            border-radius: 10px 10px 0 0;
+        }
+        .btn-primary {
+            background-color: #1DB954;
+            border: none;
+            padding: 10px 20px;
+            font-weight: 500;
+        }
+        .btn-primary:hover {
+            background-color: #1ED760;
+        }
+        .btn-danger {
+            background-color: #dc3545;
+            border: none;
+            padding: 10px 20px;
+            font-weight: 500;
+        }
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+        table {
+            width: 100%;
+            margin-top: 20px;
+            color: #ffffff;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #333;
+        }
+        th {
+            background-color: #1DB954;
+            color: white;
+        }
+        .event-image {
+            width: 150px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 5px;
+        }
+        .alert {
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Navigation Bar -->
+<nav class="navbar">
+    <a href="event.php"><i class="fas fa-home"></i> Home</a>
+    <a href="ev_adding.php"><i class="fas fa-user-shield"></i> Admin Dashboard</a>
+    <a href="?action=logout" class="btn btn-danger"><i class="fas fa-sign-out-alt"></i> Logout</a>
+</nav>
+
+<!-- Success Message -->
+<?php if (isset($_SESSION['success'])): ?>
+    <div class="alert alert-success text-center"><?= $_SESSION['success']; unset($_SESSION['success']); ?></div>
+<?php endif; ?>
+
+<!-- Error Message -->
+<?php if (isset($_SESSION['error'])): ?>
+    <div class="alert alert-danger text-center"><?= $_SESSION['error']; unset($_SESSION['error']); ?></div>
+<?php endif; ?>
+
+<!-- Main Content -->
+<div class="container">
+    <div class="card">
+        <div class="card-header">
+            <h1 class="text-center">Admin Dashboard</h1>
+        </div>
+        <div class="card-body">
+            <!-- Add Event Form -->
+            <form method="POST" enctype="multipart/form-data" class="mb-5">
+                <input type="hidden" name="action" value="addEvent">
+                <h3 class="mb-4">Add New Event</h3>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="eventName" class="form-label">Event Name</label>
+                        <input type="text" name="eventName" class="form-control" placeholder="Enter event name" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="eventDate" class="form-label">Event Date</label>
+                        <input type="date" name="eventDate" class="form-control" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="eventTime" class="form-label">Event Time</label>
+                        <input type="time" name="eventTime" class="form-control" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="eventLocation" class="form-label">Event Location</label>
+                        <input type="text" name="eventLocation" class="form-control" placeholder="Enter event location" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="eventPhone" class="form-label">Contact Phone</label>
+                        <input type="tel" name="eventPhone" class="form-control" placeholder="Enter contact phone" required>
+                    </div>
+                    <div class="col-md-12 mb-3">
+                        <label for="eventDescription" class="form-label">Event Description</label>
+                        <textarea name="eventDescription" class="form-control" placeholder="Enter event description" rows="4" required></textarea>
+                    </div>
+                    <div class="col-md-12 mb-3">
+                        <label for="eventImage" class="form-label">Event Image</label>
+                        <input type="file" name="eventImage" class="form-control" accept="image/*" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-plus"></i> Add Event</button>
+            </form>
+
+            <!-- Event List -->
+            <h3 class="mb-4">Upcoming Events</h3>
+            <table class="table">
+                <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Description</th>
+                    <th>Location</th>
+                    <th>Phone</th>
+                    <th>Image</th>
+                    <th>Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                <?php foreach ($events as $event): ?>
+                    <tr>
+                        <td><?= htmlspecialchars($event['name']); ?></td>
+                        <td><?= htmlspecialchars($event['date']); ?></td>
+                        <td><?= htmlspecialchars($event['time']); ?></td>
+                        <td><?= htmlspecialchars($event['description']); ?></td>
+                        <td><?= htmlspecialchars($event['location']); ?></td>
+                        <td><?= htmlspecialchars($event['phone']); ?></td>
+                        <td>
+                            <img src="<?= htmlspecialchars($event['image_url']); ?>" alt="Event Image" class="event-image">
+                        </td>
+                        <td>
+                            <a href="ev_adding.php?id=<?= $event['id']; ?>" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i> Edit</a>
+                            <a href="?action=deleteEvent&id=<?= $event['id']; ?>" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this event?');">
+                                <i class="fas fa-trash"></i> Delete
+                            </a>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

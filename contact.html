@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contact Us - Luxurious Events</title>
+  <!-- Bootstrap CSS -->
+  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+  <!-- AOS Animation Library -->
+  <link href="https://cdn.jsdelivr.net/npm/aos@2.3.1/dist/aos.css" rel="stylesheet">
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+  <!-- Custom CSS -->
+  <style>
+    /* Reset Styles */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: #f8f9fa;
+      color: #333;
+      overflow-x: hidden;
+    }
+
+    /* Navbar */
+    .navbar {
+      background-color: #1db954;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      padding: 20px 40px;
+    }
+
+    .navbar a {
+      color: white;
+      text-decoration: none;
+      font-size: 18px;
+      margin-right: 15px;
+    }
+
+    .navbar a:hover {
+      color: #ffd700;
+    }
+
+    /* Page Header */
+    .page-header {
+      text-align: center;
+      padding: 50px 20px;
+      background: linear-gradient(135deg, #1db954, #00d26a);
+      color: white;
+    }
+
+    .page-header h1 {
+      font-size: 3rem;
+      font-weight: bold;
+    }
+
+    .page-header p {
+      font-size: 1.2rem;
+    }
+
+    /* Contact Info Section */
+    .contact-info {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-around;
+      padding: 50px 20px;
+      background-color: #fff;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      border-radius: 10px;
+      margin-bottom: 40px;
+    }
+
+    .contact-card {
+      text-align: center;
+      margin: 20px;
+      flex: 1 1 250px;
+      padding: 20px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .contact-card:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .contact-card img {
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      margin-bottom: 20px;
+    }
+
+    .contact-card h3 {
+      font-size: 1.5rem;
+      margin-bottom: 10px;
+      color: #333;
+    }
+
+    .contact-card p {
+      font-size: 1rem;
+      color: #777;
+      margin: 5px 0;
+    }
+
+    /* Contact Form */
+    .contact-form {
+      padding: 50px 20px;
+      background-color: #fff;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .contact-form h4 {
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 1.8rem;
+      font-weight: bold;
+    }
+
+    .form-group label {
+      font-weight: 500;
+    }
+
+    .form-control {
+      border-radius: 10px;
+      border: 1px solid #ddd;
+      transition: all 0.3s ease;
+    }
+
+    .form-control:focus {
+      border-color: #1db954;
+      box-shadow: 0 0 5px rgba(29, 185, 84, 0.5);
+    }
+
+    .btn-primary {
+      background-color: #1db954;
+      border: none;
+      border-radius: 30px;
+      padding: 10px 20px;
+      font-size: 1.2rem;
+      transition: background-color 0.3s ease;
+    }
+
+    .btn-primary:hover {
+      background-color: #159f46;
+    }
+
+    /* Footer */
+    footer {
+      background-color: #343a40;
+      color: #fff;
+      padding: 20px;
+      text-align: center;
+      margin-top: 40px;
+    }
+
+    footer a {
+      color: #1db954;
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      text-decoration: underline;
+    }
+
+    /* Media Queries */
+    @media (max-width: 768px) {
+      .contact-card img {
+        width: 120px;
+        height: 120px;
+      }
+
+      .page-header h1 {
+        font-size: 2.5rem;
+      }
+
+      .contact-info {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+
+<body>
+<!-- Navbar -->
+<nav class="navbar">
+
+  <a href="index.html" style="background-color: #ffd700; color: #fff; padding: 10px 20px; border-radius: 50px; text-decoration: none;">Home</a>
+
+</nav>
+
+<!-- Header -->
+<header class="page-header">
+  <h1>Contact Us</h1>
+  <p>We're here to assist you in making your events unforgettable.</p>
+</header>
+
+<div class="container">
+  <!-- Contact Info Section -->
+  <div class="contact-info">
+    <div class="contact-card" data-aos="fade-up">
+      <img src="images2/IMG3.jpg" alt="Main Designer">
+      <h3>Main Designer</h3>
+      <p><strong>sithara kariyawasam</strong></p>
+      <p>Email: <a href="shanthaputha@email.com">shanthaputha@email.com</a></p>
+      <p>Phone: +1 (123) 456-7890</p>
+    </div>
+
+    <div class="contact-card" data-aos="fade-up" data-aos-delay="200">
+      <img src="images2/IMG2.jpg" alt="Travel Coordinator">
+      <h3>Travel Coordinator</h3>
+      <p><strong>sithara creator</strong></p>
+      <p>Email: <a href="sithara.kariyawasam@email.com">sithara.kariyawasam@email.com</a></p>
+      <p>Phone: +1 (987) 654-3210</p>
+    </div>
+
+    <div class="contact-card" data-aos="fade-up" data-aos-delay="400">
+      <img src="images2/IMG1.jpg" alt="Event Planner">
+      <h3>Event Planner</h3>
+      <p><strong>sithara designer</strong></p>
+      <p>Email: <a href="sithara.thecreator.@email.com">sithara.thecreator.@email.com</a></p>
+      <p>Phone: +1 (555) 123-4567</p>
+    </div>
+  </div>
+
+  <!-- Contact Form Section -->
+  <div class="contact-form" data-aos="fade-up">
+    <h4>Send Us a Message</h4>
+    <form id="contactForm">
+      <div class="form-group">
+        <label for="name">Name</label>
+        <input type="text" class="form-control" id="name" placeholder="Enter your name" required>
+      </div>
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" class="form-control" id="email" placeholder="Enter your email" required>
+      </div>
+      <div class="form-group">
+        <label for="message">Message</label>
+        <textarea class="form-control" id="message" rows="4" placeholder="Write your message" required></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">Send Message</button>
+    </form>
+  </div>
+
+  <script src="script.js"></script></div>
+
+<!-- Footer -->
+<footer>
+  <p>&copy; 2024 Luxurious Events. All Rights Reserved.</p>
+  <p><a href="index.html">Home</a> | <a href="index2.html">About Us</a> | <a href="contact.html">Contact</a></p>
+</footer>
+
+<!-- Scripts -->
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.0/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/aos@2.3.1/dist/aos.js"></script>
+<script>
+  AOS.init({ duration: 1000 });
+</script>
+</body>
+
+</html>

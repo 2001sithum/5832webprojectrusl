@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Legal Document</title>
+  <link rel="stylesheet" href="styles2.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f9;
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    header {
+      background: linear-gradient(45deg, #2a2a72, #009ffd);
+      color: white;
+      text-align: center;
+      padding: 20px 0;
+    }
+    header h1 {
+      margin: 0;
+    }
+    main {
+      padding: 20px;
+    }
+    .section {
+      background-color: #ffffff;
+      margin: 20px 0;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s ease;
+    }
+    .section:hover {
+      transform: translateY(-5px);
+    }
+    .section h2 {
+      font-size: 1.8em;
+      margin-bottom: 10px;
+      color: #333;
+    }
+    .section-content p {
+      font-size: 1.1em;
+      color: #555;
+      line-height: 1.6;
+    }
+
+       .faq {
+         background: linear-gradient(45deg, #f9f9f9, #e2e2e2);
+         border: 1px solid #ddd;
+         padding: 10px;
+         margin-top: 10px;
+         border-radius: 8px;
+         cursor: pointer;
+         transition: background 0.3s ease, transform 0.3s ease;
+       }
+    .faq:hover {
+      background: linear-gradient(45deg, #e2e2e2, #f9f9f9);
+      transform: scale(1.05);
+    }
+    .faq-answer {
+      display: none;
+      padding-top: 10px;
+      font-size: 1em;
+      color: #444;
+      transition: max-height 0.3s ease;
+      max-height: 0;
+      overflow: hidden;
+    }
+    .faq.open .faq-answer {
+      display: block;
+      max-height: 500px; /* Adjust as needed */
+    }
+    .faq h3 {
+      font-size: 1.2em;
+      margin: 0;
+      color: #333;
+    }
+    footer {
+      background: #2a2a72;
+      color: white;
+      text-align: center;
+      padding: 10px 0;
+      position: relative;
+      bottom: 0;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Header Section -->
+<header class="header">
+  <h1>Legal Terms and Conditions</h1>
+</header>
+
+<!-- Main Content -->
+<main class="content">
+  <!-- What We Do Section -->
+  <section class="section animate-section">
+    <h2>What We Do</h2>
+    <div class="section-content">
+      <p class="english">
+        We provide a wide range of services aimed at improving your experience with our platform. Our mission is to offer solutions that are efficient, user-friendly, and tailored to meet your needs. We strive to create value through innovative technology and customer-centric practices.
+      </p>
+      <p class="sinhala">
+        අපි ඔබගේ අත්දැකීම් වැඩිදියුණු කිරීම සඳහා සේවා රේඛාවක් සපයමු. අපගේ මෙහෙවර යනු කාර්යක්ෂම, පරිශීලක මිතුරන් හා ඔබගේ අවශ්‍යතා සපුරාලන විසඳුම් ලබා දීමයි. අපි නවීන තාක්ෂණය හා ගනුදෙනුකරු මූලික ක්‍රමවේද හරහා වටිනාකමක් නිර්මාණය කිරීමට උත්සාහ කරනවා.
+      </p>
+    </div>
+  </section>
+
+  <!-- About ebent3d Section -->
+  <section class="section animate-section">
+    <h2>About ebent3d</h2>
+    <div class="section-content">
+      <p class="english">
+        ebent3d is an innovative platform aimed at bridging the gap between technology and creativity. We aim to provide our users with cutting-edge 3D design and development tools. Our motivation stems from a passion for exploring the limitless possibilities of digital creation, helping individuals and businesses turn their ideas into reality.
+      </p>
+      <p class="sinhala">
+        ebent3d යනු තාක්ෂණය සහ සැලසුම් අතර ගමන බිඳ දැමීමට උත්සාහ කරන නවීන වේදිකාවක් වේ. අපි අපගේ පරිශීලකයන්ට නවීන 3D සැලසුම් සහ සංවර්ධන මෙවලම් ලබා දීමට ඉලක්ක කර ගනී. අපගේ අරමුණ සහ උනන්දුකම ඩිජිටල් නිර්මාණයේ සීමාවන් රහිත හැකියාවන් පරීක්ෂා කිරීමෙන් පටන් ගනී, පුද්ගලයින් සහ ව්‍යාපාරවලට ඔවුන්ගේ අදහස් realidade (වාරිකවක්) බවට පරිවර්තනය කිරීමට උපකාරී වීමට.
+      </p>
+    </div>
+  </section>
+
+  <!-- Terms and Conditions Section -->
+  <section class="section animate-section">
+    <h2>Terms and Conditions</h2>
+    <div class="section-content">
+      <p class="english">
+        By using our platform, you agree to abide by the following terms and conditions. These terms are designed to ensure that all users have a safe and secure experience. Please read them carefully before proceeding with our services.
+      </p>
+      <p class="sinhala">
+        අපගේ වේදිකාව භාවිතා කිරීමෙන්, ඔබ පහත සඳහන් නීති හා කොන්දේසි වලට අනුගත වීමට සම්මත කරයි. මෙම කොන්දේසි සියලුම පරිශීලකයින්ට ආරක්ෂිත සහ ආරක්ෂිත අත්දැකීමක් ලබා දීමට නිර්දේශිත වේ. කරුණාකර අපගේ සේවා භාවිතා කිරීමට පෙර ඒවා මනාව කියවන්න.
+      </p>
+    </div>
+  </section>
+
+  <!-- FAQ Section -->
+  <section class="section animate-section">
+    <h2>FAQs - Ticketing and Event Nature</h2>
+    <div class="section-content">
+      <div class="faq">
+        <h3>What types of events can I purchase tickets for?</h3>
+        <div class="faq-answer">
+          <p>You can purchase tickets for a wide range of events, including concerts, conferences, workshops, and more. Our platform offers a variety of events to cater to different interests and industries.</p>
+        </div>
+      </div>
+      <div class="faq">
+        <h3>How do I get my ticket after purchase?</h3>
+        <div class="faq-answer">
+          <p>After purchasing a ticket, you will receive an email with your ticket details. You can either print your ticket or present it digitally at the event.</p>
+        </div>
+      </div>
+      <div class="faq">
+        <h3>Can I transfer my ticket to someone else?</h3>
+        <div class="faq-answer">
+          <p>Yes, you can transfer your ticket to another person by following the instructions in your confirmation email. Please ensure the recipient has all necessary information to attend the event.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- Footer Section -->
+
+  <footer>
+    <p>&copy; 2024 Event3D | All Rights Reserved</p>
+    <a href="index.html" style="text-decoration: none; color: #2d87f0;">Back to Home</a>
+  </footer>
+
+
+<script>
+  const faqs = document.querySelectorAll('.faq');
+  faqs.forEach(faq => {
+    faq.addEventListener('click', () => {
+      faq.classList.toggle('open');
+    });
+  });
+</script>
+
+</body>
+</html>
