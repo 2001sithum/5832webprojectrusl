@@ -1,16 +1,26 @@
 <?php
 session_start();
-require 'db.php'; // Database connection
+require 'db.php';
 
-// Fetch all events
-$events = $db->query("SELECT * FROM events ORDER BY date ASC")->fetchAll();
+if (!isset($_GET['id'])) {
+    header("Location: index.php");
+    exit();
+}
+
+$event_id = $_GET['id'];
+$event = $db->query("SELECT * FROM events WHERE id = $event_id")->fetch();
+
+if (!$event) {
+    header("Location: index.php");
+    exit();
+}
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Event Management</title>
+    <title><?= htmlspecialchars($event['name']) ?></title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <style>
         /* Global Styles */
@@ -165,72 +175,39 @@ $events = $db->query("SELECT * FROM events ORDER BY date ASC")->fetchAll();
     </style>
 </head>
 <body>
-
 <!-- Navbar -->
 <div class="navbar">
     <div>
-        <a href="index.html">Home</a>
-        <?php if (isset($_SESSION['user_id'])): ?>
-            <?php if ($_SESSION['role'] === 'admin'): ?>
-                <a href="admin.php">Admin Panel</a>
-            <?php else: ?>
-                <a href="user.php">User Dashboard</a>
-            <?php endif; ?>
-        <?php endif; ?>
+        <a href="index.php">Home</a>
     </div>
     <div>
-        <?php if (!isset($_SESSION['user_id'])): ?>
+        <?php if (isset($_SESSION['user_id'])): ?>
+            <a href="auth.php?action=logout">Logout</a>
+        <?php else: ?>
             <a href="login.php">Login</a>
             <a href="register.php">Register</a>
-        <?php else: ?>
-            <a href="auth.php?action=logout">Logout</a>
         <?php endif; ?>
     </div>
 </div>
 
-<header>
-    <h1>Upcoming Events</h1>
-</header>
-
-<!-- Messages -->
-<?php if (isset($_SESSION['error'])): ?>
-    <div class="message error"><?= $_SESSION['error']; unset($_SESSION['error']); ?></div>
-<?php endif; ?>
-<?php if (isset($_SESSION['success'])): ?>
-    <div class="message success"><?= $_SESSION['success']; unset($_SESSION['success']); ?></div>
-<?php endif; ?>
-
-<!-- Events -->
+<!-- Event Details -->
 <div class="event-container">
-    <?php foreach ($events as $event): ?>
-        <div class="event-card">
-            <h2>
-                <a href="display.php?id=<?= $event['id'] ?>">
-                    <?= htmlspecialchars($event['name']) ?>
-                </a>
-            </h2>
-            <p>📅 Date: <?= htmlspecialchars($event['date']) ?></p>
-            <p>📍 Location: <?= htmlspecialchars($event['location']) ?></p>
-            <?php if (isset($_SESSION['user_id'])): ?>
-                <?php if ($_SESSION['role'] === 'admin'): ?>
-                    <p>
-                        <a href="edit_event.php?id=<?= $event['id'] ?>">Edit</a> |
-                        <a href="delete_event.php?id=<?= $event['id'] ?>" onclick="return confirm('Are you sure?')">Delete</a>
-                    </p>
-                <?php else: ?>
-                    <p>
-                        <a href="rsvp.php?event_id=<?= $event['id'] ?>">RSVP</a>
-                    </p>
-                <?php endif; ?>
-            <?php endif; ?>
-        </div>
-    <?php endforeach; ?>
+    <div class="event-card">
+        <h2><?= htmlspecialchars($event['name']) ?></h2>
+        <p>📅 Date: <?= htmlspecialchars($event['date']) ?></p>
+        <p>📍 Location: <?= htmlspecialchars($event['location']) ?></p>
+        <?php if (isset($_SESSION['user_id']) && $_SESSION['role'] === 'user'): ?>
+            <p>
+                <a href="rsvp.php?event_id=<?= $event_id ?>">RSVP</a>
+            </p>
+        <?php endif; ?>
+    </div>
 </div>
 
+<!-- Footer -->
 <footer>
     <p>&copy; 2025 Event Management. All rights reserved.</p>
     <a href="index.html">Back to Home</a>
 </footer>
-
 </body>
 </html>

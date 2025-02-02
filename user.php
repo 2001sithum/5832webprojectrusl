@@ -1,18 +1,67 @@
 <?php
 session_start();
-require 'db.php'; // Database connection
+require 'db.php';
 
-// Fetch all events
-$events = $db->query("SELECT * FROM events ORDER BY date ASC")->fetchAll();
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'user') {
+    header("Location: index.php");
+    exit();
+}
+
+// Fetch user's RSVPs
+$user_id = $_SESSION['user_id'];
+$rsvps = $db->query("SELECT events.* FROM events JOIN rsvps ON events.id = rsvps.event_id WHERE rsvps.user_id = $user_id")->fetchAll();
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Event Management</title>
+    <title>User Dashboard</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <style>
+
+            /* Admin Panel Styles */
+        .event-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .event-card {
+            background-color: #282828;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s ease;
+        }
+
+        .event-card:hover {
+            transform: scale(1.05);
+        }
+
+        .event-card h2 {
+            font-size: 20px;
+            margin-bottom: 10px;
+            color: #1DB954;
+        }
+
+        .event-card p {
+            font-size: 16px;
+            margin: 5px 0;
+            color: #E4E4E4;
+        }
+
+        .event-card a {
+            color: #1DB954;
+            font-size: 16px;
+            text-decoration: none;
+        }
+
+        .event-card a:hover {
+            text-decoration: underline;
+        }
+
         /* Global Styles */
         body {
             background-color: #121212;
@@ -165,32 +214,16 @@ $events = $db->query("SELECT * FROM events ORDER BY date ASC")->fetchAll();
     </style>
 </head>
 <body>
-
 <!-- Navbar -->
 <div class="navbar">
     <div>
-        <a href="index.html">Home</a>
-        <?php if (isset($_SESSION['user_id'])): ?>
-            <?php if ($_SESSION['role'] === 'admin'): ?>
-                <a href="admin.php">Admin Panel</a>
-            <?php else: ?>
-                <a href="user.php">User Dashboard</a>
-            <?php endif; ?>
-        <?php endif; ?>
+        <a href="index.php">Home</a>
+        <a href="user.php">User Dashboard</a>
     </div>
     <div>
-        <?php if (!isset($_SESSION['user_id'])): ?>
-            <a href="login.php">Login</a>
-            <a href="register.php">Register</a>
-        <?php else: ?>
-            <a href="auth.php?action=logout">Logout</a>
-        <?php endif; ?>
+        <a href="auth.php?action=logout">Logout</a>
     </div>
 </div>
-
-<header>
-    <h1>Upcoming Events</h1>
-</header>
 
 <!-- Messages -->
 <?php if (isset($_SESSION['error'])): ?>
@@ -200,37 +233,21 @@ $events = $db->query("SELECT * FROM events ORDER BY date ASC")->fetchAll();
     <div class="message success"><?= $_SESSION['success']; unset($_SESSION['success']); ?></div>
 <?php endif; ?>
 
-<!-- Events -->
+<!-- User Content -->
+<h1>User Dashboard</h1>
 <div class="event-container">
-    <?php foreach ($events as $event): ?>
+    <?php foreach ($rsvps as $event): ?>
         <div class="event-card">
-            <h2>
-                <a href="display.php?id=<?= $event['id'] ?>">
-                    <?= htmlspecialchars($event['name']) ?>
-                </a>
-            </h2>
+            <h2><?= htmlspecialchars($event['name']) ?></h2>
             <p>📅 Date: <?= htmlspecialchars($event['date']) ?></p>
             <p>📍 Location: <?= htmlspecialchars($event['location']) ?></p>
-            <?php if (isset($_SESSION['user_id'])): ?>
-                <?php if ($_SESSION['role'] === 'admin'): ?>
-                    <p>
-                        <a href="edit_event.php?id=<?= $event['id'] ?>">Edit</a> |
-                        <a href="delete_event.php?id=<?= $event['id'] ?>" onclick="return confirm('Are you sure?')">Delete</a>
-                    </p>
-                <?php else: ?>
-                    <p>
-                        <a href="rsvp.php?event_id=<?= $event['id'] ?>">RSVP</a>
-                    </p>
-                <?php endif; ?>
-            <?php endif; ?>
         </div>
     <?php endforeach; ?>
 </div>
 
+<!-- Footer -->
 <footer>
     <p>&copy; 2025 Event Management. All rights reserved.</p>
-    <a href="index.html">Back to Home</a>
 </footer>
-
 </body>
 </html>

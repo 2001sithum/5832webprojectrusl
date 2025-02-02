@@ -1,16 +1,44 @@
 <?php
 session_start();
-require 'db.php'; // Database connection
+require 'db.php';
 
-// Fetch all events
-$events = $db->query("SELECT * FROM events ORDER BY date ASC")->fetchAll();
+if (isset($_SESSION['user_id'])) {
+    header("Location: index.php");
+    exit();
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $username = $_POST['username'];
+    $password = $_POST['password'];
+
+    $stmt = $db->prepare("SELECT * FROM users WHERE username = ?");
+    $stmt->execute([$username]);
+    $user = $stmt->fetch();
+
+    if ($user && password_verify($password, $user['password'])) {
+        $_SESSION['user_id'] = $user['id'];
+        $_SESSION['username'] = $user['username'];
+        $_SESSION['role'] = $user['role'];
+
+        if ($user['role'] === 'admin') {
+            header("Location: admin.php");
+        } else {
+            header("Location: user.php");
+        }
+        exit();
+    } else {
+        $_SESSION['error'] = "Invalid username or password.";
+        header("Location: login.php");
+        exit();
+    }
+}
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Event Management</title>
+    <title>Login</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <style>
         /* Global Styles */
@@ -165,72 +193,37 @@ $events = $db->query("SELECT * FROM events ORDER BY date ASC")->fetchAll();
     </style>
 </head>
 <body>
-
 <!-- Navbar -->
 <div class="navbar">
     <div>
-        <a href="index.html">Home</a>
-        <?php if (isset($_SESSION['user_id'])): ?>
-            <?php if ($_SESSION['role'] === 'admin'): ?>
-                <a href="admin.php">Admin Panel</a>
-            <?php else: ?>
-                <a href="user.php">User Dashboard</a>
-            <?php endif; ?>
-        <?php endif; ?>
+        <a href="index.php">Home</a>
     </div>
     <div>
-        <?php if (!isset($_SESSION['user_id'])): ?>
-            <a href="login.php">Login</a>
-            <a href="register.php">Register</a>
-        <?php else: ?>
-            <a href="auth.php?action=logout">Logout</a>
-        <?php endif; ?>
+        <a href="register.php">Register</a>
     </div>
 </div>
-
-<header>
-    <h1>Upcoming Events</h1>
-</header>
 
 <!-- Messages -->
 <?php if (isset($_SESSION['error'])): ?>
     <div class="message error"><?= $_SESSION['error']; unset($_SESSION['error']); ?></div>
 <?php endif; ?>
-<?php if (isset($_SESSION['success'])): ?>
-    <div class="message success"><?= $_SESSION['success']; unset($_SESSION['success']); ?></div>
-<?php endif; ?>
 
-<!-- Events -->
-<div class="event-container">
-    <?php foreach ($events as $event): ?>
-        <div class="event-card">
-            <h2>
-                <a href="display.php?id=<?= $event['id'] ?>">
-                    <?= htmlspecialchars($event['name']) ?>
-                </a>
-            </h2>
-            <p>📅 Date: <?= htmlspecialchars($event['date']) ?></p>
-            <p>📍 Location: <?= htmlspecialchars($event['location']) ?></p>
-            <?php if (isset($_SESSION['user_id'])): ?>
-                <?php if ($_SESSION['role'] === 'admin'): ?>
-                    <p>
-                        <a href="edit_event.php?id=<?= $event['id'] ?>">Edit</a> |
-                        <a href="delete_event.php?id=<?= $event['id'] ?>" onclick="return confirm('Are you sure?')">Delete</a>
-                    </p>
-                <?php else: ?>
-                    <p>
-                        <a href="rsvp.php?event_id=<?= $event['id'] ?>">RSVP</a>
-                    </p>
-                <?php endif; ?>
-            <?php endif; ?>
-        </div>
-    <?php endforeach; ?>
+<!-- Login Form -->
+<div class="form-container">
+    <h2>Login</h2>
+    <form method="POST" action="login.php">
+        <input type="text" name="username" placeholder="Username" required class="form-input">
+        <input type="password" name="password" placeholder="Password" required class="form-input">
+        <button type="submit" class="form-button">
+            <i class="fa fa-sign-in-alt"></i> Login
+        </button>
+    </form>
 </div>
 
+<!-- Footer -->
 <footer>
     <p>&copy; 2025 Event Management. All rights reserved.</p>
     <a href="index.html">Back to Home</a>
 </footer>
-
 </body>
 </html>
