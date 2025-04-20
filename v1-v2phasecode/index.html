@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Event3D - Landing Page</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    /* Inline CSS for the image slider and its animations */
+    /* Slider container */
+    .slider {
+      position: relative;
+      width: 100%;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Add a smooth blending effect to the images */
+    .slide {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0;
+      transition: opacity 1s ease-in-out; /* Make the transition faster */
+      z-index: 0;
+      will-change: opacity; /* Optimize for smoother transitions */
+    }
+
+    /* The fade animation now has faster transitions */
+    .fade {
+      animation: fade 3s infinite; /* Reduced the animation duration for quicker transitions */
+    }
+
+    @keyframes fade {
+      0% {
+        opacity: 0;
+      }
+      12.5% {
+        opacity: 1;
+      }
+      25% {
+        opacity: 0;
+      }
+      37.5% {
+        opacity: 0;
+      }
+      50% {
+        opacity: 1;
+      }
+      62.5% {
+        opacity: 0;
+      }
+      75% {
+        opacity: 0;
+      }
+      87.5% {
+        opacity: 1;
+      }
+      100% {
+        opacity: 0;
+      }
+    }
+
+    /* Optional: Add some visual enhancement like fading background overlay */
+    .slider::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.3); /* Transparent overlay */
+      z-index: 1;
+    }
+    .slider {
+      position: relative;
+      width: 100%;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .slide {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0;
+      transition: opacity 1s ease-in-out;
+    }
+
+    .fade {
+      animation: fade 18s infinite;
+    }
+
+    @keyframes fade {
+      0% {
+        opacity: 0;
+      }
+      16.6% {
+        opacity: 1;
+      }
+      33.3% {
+        opacity: 0;
+      }
+      50% {
+        opacity: 0;
+      }
+      66.6% {
+        opacity: 1;
+      }
+      83.3% {
+        opacity: 0;
+      }
+      100% {
+        opacity: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+<header>
+  <nav class="navbar">
+    <div class="logo">Event3D</div>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+
+      <li><a href="index2.html">About</a></li>
+      <li><a href="../indexback.html" style="background-color: #f8c200; color: #fff; padding: 10px 20px; border-radius: 50px; text-decoration: none;">the event tracker</a></li>    </ul>
+  </nav>
+
+  <section class="hero">
+    <div class="hero-content">
+      <h1>Discover Amazing Events</h1>
+      <p>Find events near you and connect with the community.</p>
+      <a href="index3.html" class="cta">Learn More</a>
+    </div>
+
+    <!-- Image Slider -->
+    <div class="slider">
+      <img class="slide fade" src="images/image1.jpg" alt="Event 1">
+      <img class="slide fade" src="images/image2.jpg" alt="Event 2">
+      <img class="slide fade" src="images/image3.jpg" alt="Event 3">
+      <img class="slide fade" src="images/image4.jpg" alt="Event 4">
+      <img class="slide fade" src="images/image5.jpg" alt="Event 5">
+      <img class="slide fade" src="images/image6.jpg" alt="Event 6">
+    </div>
+  </section>
+</header>
+
+<!-- Footer Section -->
+<footer>
+  <div >
+    <p style="font-size: 16px; margin-bottom: 10px;">&copy; 2025 Event Management. All rights reserved.</p>
+    <div style="margin-top: 10px;">
+      <a href="index.html" style="color: #ECF0F1; text-decoration: none; margin: 0 15px; font-size: 14px; transition: color 0.3s ease;" onmouseover="this.style.color='#3498DB'" onmouseout="this.style.color='#ECF0F1'">Back to Home</a>
+    </div>
+  </div>
+</footer>
+</body>
+</html>
+
+
